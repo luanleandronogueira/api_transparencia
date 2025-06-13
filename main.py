@@ -6,9 +6,9 @@ from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
 from sqlalchemy import between
 from database import get_db
-from models import Servidor
-from models import LOA
-
+from models import Servidor, LOA, LDO, PPA, Prestacao_Contas, Entidade
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
@@ -19,11 +19,34 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 def index():
     return {"message": "Hello, World!"}
 
-@app.get("/consulta_salario_servidores")
+
+def valida_id_entidade(
+    id_entidade: int,
+    db: Session = Depends(get_db)   
+):
+    entidade = db.query(Entidade).filter(Entidade.id == id_entidade).first()
+    if not entidade:
+        return False
+    else:
+        return True
+    
+    
+@app.get("/consulta_salario_servidores/{id_entidade}")
 @limiter.limit("5/minute")
-def consulta_salario_servidores(request: Request, db: Session = Depends(get_db)):
-    servidores = db.query(Servidor).all()
-    return servidores
+def consulta_salario_servidores(
+    request: Request,
+    id_entidade: int, 
+    db: Session = Depends(get_db)
+):
+    entidade = valida_id_entidade(id_entidade, db)
+    
+    if entidade == False:
+        return JSONResponse(status_code=404, content={"message": "Entidade não encontrada"})
+    elif entidade == True and db.query(Servidor).filter(Servidor.id_entidade == id_entidade).count() < 1:
+        return JSONResponse(status_code=404, content={"message": "Não há dados suficientes para esta entidade"})
+    else:
+        servidores = db.query(Servidor).filter(Servidor.id_entidade == id_entidade).all()
+        return servidores
     
 @app.get("/consulta_servidores_filtrado")
 @limiter.limit("5/minute")
@@ -51,7 +74,7 @@ def consulta_servidores_filtrado(
 def consulta_loa(
     request: Request,
     data_inicial: str = Query(None, description="Data inicial no formato YYYY-MM-DD"),
-    data_final: str = Query(None, description="Data final no formato YYYY-MM-DD"),
+    data_final: str  = Query(None, description="Data final no formato YYYY-MM-DD"),
     db: Session = Depends(get_db)
 ):
     if data_inicial and data_final:
@@ -60,4 +83,49 @@ def consulta_loa(
     else:
         query = db.query(LOA)
         return query.all()
+
+@app.get("/consulta_ldo")
+@limiter.limit("5/minute")
+def consulta_ldo(
+    request: Request,
+    data_inicial: str = Query(None, description="Data inicial no formato YYYY-MM-DD"),
+    data_final: str  = Query(None, description="Data final no formato YYYY-MM-DD"),
+    db: Session = Depends(get_db)
+):
+    if data_inicial and data_final:
+        query = db.query(LDO).filter(between(LDO.ano, data_inicial, data_final))
+        return query.all()
+    else:
+        query = db.query(LDO)
+        return query.all()  
     
+@app.get("/consulta_ppa")
+@limiter.limit("5/minute")
+def consulta_ppa(
+    request: Request,
+    data_inicial: str = Query(None, description="Data inicial no formato YYYY-MM-DD"),
+    data_final: str  = Query(None, description="Data final no formato YYYY-MM-DD"),
+    db: Session = Depends(get_db)
+):
+    if data_inicial and data_final:
+        query = db.query(PPA).filter(between(PPA.ano, data_inicial, data_final))
+        return query.all()
+    else:
+        query = db.query(PPA)
+        return query.all()  
+    
+@app.get("/consulta_prestacao_contas")
+@limiter.limit("5/minute")
+def consulta_prestacao_contas(
+    request: Request,
+    ano: int = Query(None, description="Ano de referência"),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Prestacao_Contas)
+    
+    if ano:
+        query = db.query(Prestacao_Contas).filter(Prestacao_Contas.ano == ano)
+        return query.all()
+    else:
+        query = db.query(Prestacao_Contas)
+        return query.all()
