@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Text
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -33,6 +33,8 @@ class LOA(Base):
     numero = Column(String(10), nullable=False)
     titulo = Column(String(200), nullable=False)
     arquivo = Column(String(500), nullable=False)
+    id_entidade = Column(Integer, nullable=False)
+    
     
 class LDO(Base):
     __tablename__ = 'ldo'
@@ -42,6 +44,8 @@ class LDO(Base):
     numero = Column(String(10), nullable=False)
     titulo = Column(String(200), nullable=False)
     arquivo = Column(String(500), nullable=False)
+    id_entidade = Column(Integer, nullable=False)
+    
     
 class PPA(Base):
     __tablename__ = 'ppa'
@@ -51,6 +55,8 @@ class PPA(Base):
     numero = Column(String(10), nullable=False)
     titulo = Column(String(200), nullable=False)
     arquivo = Column(String(500), nullable=False)
+    id_entidade = Column(Integer, nullable=False)
+    
     
 class Prestacao_Contas(Base):
     __tablename__ = 'prestacao_contas'
@@ -58,4 +64,22 @@ class Prestacao_Contas(Base):
     ano = Column(Integer, nullable=False)
     arquivo = Column(String(500), nullable=False)
     demais_atos = Column(String(500), nullable=True)
+    id_entidade = Column(Integer, nullable=False)
+    
+class Licitacoes(Base):
+    __tablename__ = 'licitacoes'
+    id = Column(Integer, primary_key=True, index=True)
+    sequecial = Column(String(20), nullable=False)
+    processo = Column(String(100), nullable=False)
+    modalidade = Column(String(50), nullable=False)
+    data =  Column(Date, nullable=False)
+    processo_srp = Column(String(1), nullable=True)
+    objeto = Column(Text, nullable=False)
+    fase = Column(String(50), nullable=False)
+    situacao = Column(String(50), nullable=False)
+    valor_estimado = Column(String(20), nullable=True)
+    homologado = Column(String(30), nullable=True)
+    anexos = Column(String(500), nullable=True)
+    entidade = Column(String(100), nullable=False)
+    id_entidade = Column(Integer, nullable=False)
     
